@@ -275,6 +275,30 @@ app.get('/api/auth/me', async (req, res) => {
 });
 
 // ============ GROUPS ============
+app.get('/api/groups', async (req, res) => {
+  await delay(400);
+  
+  res.json({
+    groups: DB.groups.map(g => ({
+      id: g.id,
+      name: g.name,
+      type: g.type,
+      categoryId: g.categoryId,
+      categoryName: g.categoryName,
+      privacy: g.privacy,
+      parentId: g.parentId,
+      memberCount: g.memberCount,
+      activeMembers: Math.floor(g.memberCount * 0.9),
+      details: g.details,
+      metaData: g.metaData,
+    })),
+    summary: {
+      totalGroups: DB.groups.length,
+      totalMembers: DB.groups.reduce((sum, g) => sum + g.memberCount, 0),
+    },
+  });
+});
+
 app.get('/api/groups/me', async (req, res) => {
   await delay(400);
   const user = TEST_USERS[0];

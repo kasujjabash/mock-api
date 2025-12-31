@@ -782,6 +782,100 @@ app.get('/api/users', async (req, res) => {
   });
 });
 
+app.post('/api/users', async (req, res) => {
+  await delay(400);
+  
+  const { contactId, password, roles, permissions, manageGroupIds, viewGroupIds } = req.body;
+
+  if (!contactId || !password) {
+    return res.status(400).json({ message: 'contactId and password are required' });
+  }
+
+  // Check if contact exists
+  const contact = DB.contacts.find(c => c.id === contactId);
+  if (!contact) {
+    return res.status(404).json({ message: 'Contact not found' });
+  }
+
+  // Check if user already exists for this contact
+  const existingUser = DB.users.find(u => u.contactId === contactId);
+  if (existingUser) {
+    return res.status(409).json({ message: 'User already exists for this contact' });
+  }
+
+  // Generate new ID
+  const newId = Math.max(...DB.users.map(u => u.id)) + 1;
+
+  const newUser = {
+    id: newId,
+    username: contact.email,
+    password,
+    contactId,
+    fullName: `${contact.firstName} ${contact.lastName}`,
+    email: contact.email,
+    roles: roles || [],
+    permissions: permissions || [],
+    manageGroupIds: manageGroupIds || [],
+    viewGroupIds: viewGroupIds || [],
+  };
+
+  DB.users.push(newUser);
+
+  res.status(201).json({
+    id: newUser.id,
+    username: newUser.username,
+    fullName: newUser.fullName,
+    email: newUser.email,
+    avatar: `https://i.pravatar.cc/200?img=${newUser.id}`,
+    contactId: newUser.contactId,
+    roles: newUser.roles,
+    permissions: newUser.permissions,
+    isActive: true,
+  });
+});
+
+app.patch('/api/users/:id', async (req, res) => {
+  await delay(400);
+  
+  const userId = parseInt(req.params.id);
+  const { password, roles, permissions, manageGroupIds, viewGroupIds } = req.body;
+
+  // Find the user
+  const user = DB.users.find(u => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  // Update allowed fields
+  if (password !== undefined) {
+    user.password = password;
+  }
+  if (roles !== undefined) {
+    user.roles = roles;
+  }
+  if (permissions !== undefined) {
+    user.permissions = permissions;
+  }
+  if (manageGroupIds !== undefined) {
+    user.manageGroupIds = manageGroupIds;
+  }
+  if (viewGroupIds !== undefined) {
+    user.viewGroupIds = viewGroupIds;
+  }
+
+  res.json({
+    id: user.id,
+    username: user.username,
+    fullName: user.fullName,
+    email: user.email,
+    avatar: `https://i.pravatar.cc/200?img=${user.id}`,
+    contactId: user.contactId,
+    roles: user.roles,
+    permissions: user.permissions,
+    isActive: true,
+  });
+});
+
 // ============ SEARCH ============
 app.get('/api/search', async (req, res) => {
   await delay(400);
